@@ -1,41 +1,82 @@
 "use client";
 import { useState, useEffect } from "react";
+import SearchResults from "@/components/SearchResults";
 
 interface SearchBarProps {
-  onSearch: () => void;
+  onSearch: (query: string) => void;
   resetTrigger?: number; // A value that changes when reset is needed
+  initialQuery?: string; // Initial query value
+  compact?: boolean; // Whether to show a compact version
+  showResultsInline?: boolean; // Whether to show results inline with the search bar
 }
 
-export default function SearchBar({ onSearch, resetTrigger = 0 }: SearchBarProps) {
-  const [query, setQuery] = useState("");
+export default function SearchBar({ 
+  onSearch, 
+  resetTrigger = 0, 
+  initialQuery = "", 
+  compact = false,
+  showResultsInline = true
+}: SearchBarProps) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<any[]>([]);
+  const [aiSummary, setAiSummary] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Reset search when resetTrigger changes
+  // Run search when initialQuery changes or component mounts with initialQuery
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim() !== "") {
+      setQuery(initialQuery);
+      handleSearch(initialQuery);
+    }
+  }, [initialQuery]); // Don't include query in dependency array to avoid loops
+
   useEffect(() => {
     if (resetTrigger > 0) {
       setQuery("");
       setResults([]);
+      setAiSummary("");
       setLoading(false);
       setHasSearched(false);
     }
   }, [resetTrigger]);
 
-  const handleSearch = async () => {
-    if (!query) return;
+  const handleSearch = async (searchQuery = query) => {
+    if (!searchQuery || searchQuery.trim() === "") return;
+    
+    // Clear previous results and set loading state
+    setResults([]);
+    setAiSummary("");
     setLoading(true);
     setHasSearched(true);
-    onSearch();
-    const res = await fetch("/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
-    });
+    onSearch(searchQuery);
+    
+    try {
+      const res = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: searchQuery }),
+      });
 
-    const data = await res.json();
-    setResults(data.results || []);
-    setLoading(false);
+      if (!res.ok) {
+        throw new Error(`Search request failed with status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Search results:", data);
+      
+      if (data.searchResults) {
+        setResults(data.searchResults);
+      }
+      
+      if (data.aiSummary) {
+        setAiSummary(data.aiSummary);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -45,12 +86,23 @@ export default function SearchBar({ onSearch, resetTrigger = 0 }: SearchBarProps
   };
 
   return (
-    <div className="flex flex-col w-full max-w-3xl">
-      <div className="relative w-full">
+    <div className={`flex flex-col w-full ${compact ? 'max-w-full' : 'max-w-3xl'}`}>
+
+      <div className="w-full max-w-3xl mt-0">
+        <SearchResults 
+          results={results}
+          aiSummary={aiSummary}
+          loading={loading}
+          hasSearched={hasSearched}
+          query={query}
+        />
+      </div>
+
+      <div className="relative w-full mt-80">
         <input
           type="text"
           placeholder="Ask anything..."
-          className="w-full bg-[#2b2b2b] px-6 py-4 rounded-full placeholder-gray-400 outline-none border border-transparent focus:border-[#3a3a3a] transition-colors text-lg"
+          className={`w-full bg-[#2b2b2b] px-6 ${compact ? 'py-3' : 'py-4'} rounded-full placeholder-gray-400 outline-none border border-transparent focus:border-[#3a3a3a] transition-colors ${compact ? 'text-base' : 'text-lg'}`}
           spellCheck={false}
           data-ms-editor="true"
           value={query}
@@ -58,7 +110,7 @@ export default function SearchBar({ onSearch, resetTrigger = 0 }: SearchBarProps
           onKeyDown={handleKeyDown}
         />
         <button 
-          onClick={handleSearch}
+          onClick={() => handleSearch()}
           disabled={!query.trim()}
           className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${
             query.trim() ? 'text-blue-400 hover:bg-[#3a3a3a]' : 'text-gray-500 cursor-not-allowed'
@@ -67,8 +119,8 @@ export default function SearchBar({ onSearch, resetTrigger = 0 }: SearchBarProps
         >
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
-            width="22" 
-            height="22" 
+            width={compact ? "18" : "22"} 
+            height={compact ? "18" : "22"} 
             viewBox="0 0 24 24" 
             fill="none" 
             stroke="currentColor" 
@@ -81,35 +133,6 @@ export default function SearchBar({ onSearch, resetTrigger = 0 }: SearchBarProps
         </button>
       </div>
 
-      {loading && (
-        <div className="mt-4 text-center">
-          <p className="text-gray-400">Searching...</p>
-        </div>
-      )}
-
-      {results.length > 0 && (
-        <div className="mt-4 bg-[#2b2b2b] rounded-lg p-4 border border-[#3a3a3a]">
-          {results.map((result, index) => (
-            <div key={index} className="border-b border-[#3a3a3a] py-3 last:border-0">
-              <a 
-                href={result.link} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-blue-400 hover:text-blue-300 font-medium"
-              >
-                {result.title}
-              </a>
-              <p className="text-gray-300 text-sm mt-1">{result.snippet}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!loading && hasSearched && results.length === 0 && query.trim() !== "" && (
-        <div className="mt-4 text-center">
-          <p className="text-gray-400">No results found</p>
-        </div>
-      )}
     </div>
   );
 } 

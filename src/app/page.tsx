@@ -1,16 +1,24 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
 import TopicSuggestions from "@/components/TopicSuggestions";
+import SearchResults from "@/components/SearchResults";
 
 export default function Home() {
   const [hasSearched, setHasSearched] = useState(false);
   const [resetTrigger, setResetTrigger] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [aiSummary, setAiSummary] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Function to reset the search state
   const resetSearch = () => {
     setHasSearched(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setAiSummary("");
     setResetTrigger(prev => prev + 1); // Increment to trigger the useEffect in SearchBar
   };
 
@@ -18,17 +26,43 @@ export default function Home() {
     <div className="flex min-h-screen text-white bg-[#191A1A] relative">
       <Sidebar onNavigate={resetSearch} />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 pt-16 sm:pt-8">
-        <h1 className="text-3xl sm:text-4xl font-semibold mb-8 text-center">
-          What do you want to know?
-        </h1>
-        <SearchBar 
-          onSearch={() => setHasSearched(true)} 
-          resetTrigger={resetTrigger}
-        />
-        
-        {!hasSearched && <TopicSuggestions />}
-      </main>
+      {!hasSearched ? (
+        // Landing page view with centered search bar
+        <main className="flex-1 flex flex-col items-center justify-center px-4">
+          <div className="w-full max-w-3xl flex flex-col items-center">
+            <h1 className="text-3xl sm:text-4xl font-semibold mb-8 text-center">
+              What do you want to know?
+            </h1>
+            <SearchBar 
+              onSearch={(query) => {
+                setHasSearched(true);
+                setSearchQuery(query);
+              }} 
+              resetTrigger={resetTrigger}
+            />
+            <div className="mt-8">
+              <TopicSuggestions />
+            </div>
+          </div>
+        </main>
+      ) : (
+        <main className="flex-1 flex flex-col px-4 py-8 pt-16 sm:pt-8">
+          <div className="w-full max-w-4xl mx-auto flex flex-col min-h-[calc(100vh-4rem)]">
+              <h2 className="text-2xl font-medium mb-4">Results for "{searchQuery}"</h2>
+            <div className="mt-auto mb-8 w-full">
+              <SearchBar 
+                onSearch={(query) => {
+                  setSearchQuery(query);
+                }} 
+                resetTrigger={resetTrigger}
+                initialQuery={searchQuery}
+                compact={true}
+                showResultsInline={false}
+              />
+            </div>
+          </div>
+        </main>
+      )}
     </div>
   );
 }
