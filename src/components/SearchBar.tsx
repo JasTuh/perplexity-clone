@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import SearchResults from "@/components/SearchResults";
 
 interface SearchBarProps {
@@ -10,18 +10,29 @@ interface SearchBarProps {
   showResultsInline?: boolean; // Whether to show results inline with the search bar
 }
 
-export default function SearchBar({ 
+const SearchBar = forwardRef<
+  { handleSearch: (query: string) => void },
+  SearchBarProps
+>(({ 
   onSearch, 
   resetTrigger = 0, 
   initialQuery = "", 
   compact = false,
   showResultsInline = true
-}: SearchBarProps) {
+}, ref) => {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<any[]>([]);
   const [aiSummary, setAiSummary] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Expose handleSearch method to parent components
+  useImperativeHandle(ref, () => ({
+    handleSearch: (searchQuery: string) => {
+      setQuery(searchQuery);
+      handleSearch(searchQuery);
+    }
+  }));
 
   // Run search when initialQuery changes or component mounts with initialQuery
   useEffect(() => {
@@ -87,18 +98,19 @@ export default function SearchBar({
 
   return (
     <div className={`flex flex-col w-full ${compact ? 'max-w-full' : 'max-w-3xl'}`}>
+      {(
+        <div className="w-full max-w-3xl mb-80">
+          <SearchResults 
+            results={results}
+            aiSummary={aiSummary}
+            loading={loading}
+            hasSearched={hasSearched}
+            query={query}
+          />
+        </div>
+      )}
 
-      <div className="w-full max-w-3xl mt-0">
-        <SearchResults 
-          results={results}
-          aiSummary={aiSummary}
-          loading={loading}
-          hasSearched={hasSearched}
-          query={query}
-        />
-      </div>
-
-      <div className="relative w-full mt-80">
+      <div className="relative w-full">
         <input
           type="text"
           placeholder="Ask anything..."
@@ -132,7 +144,9 @@ export default function SearchBar({
           </svg>
         </button>
       </div>
-
     </div>
   );
-} 
+});
+
+SearchBar.displayName = "SearchBar";
+export default SearchBar; 

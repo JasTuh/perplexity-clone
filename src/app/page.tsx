@@ -30,7 +30,7 @@ export default function Home() {
         // Landing page view with centered search bar
         <main className="flex-1 flex flex-col items-center justify-center px-4">
           <div className="w-full max-w-3xl flex flex-col items-center">
-            <h1 className="text-3xl sm:text-4xl font-semibold mb-8 text-center">
+            <h1 className="text-3xl sm:text-4xl font-semibold text-center">
               What do you want to know?
             </h1>
             <SearchBar 
@@ -41,7 +41,10 @@ export default function Home() {
               resetTrigger={resetTrigger}
             />
             <div className="mt-8">
-              <TopicSuggestions />
+              <TopicSuggestions onTopicSelect={(topic) => {
+                setHasSearched(true);
+                setSearchQuery(topic);
+              }} />
             </div>
           </div>
         </main>
