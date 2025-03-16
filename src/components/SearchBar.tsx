@@ -74,7 +74,6 @@ const SearchBar = forwardRef<
       }
 
       const data = await res.json();
-      console.log("Search results:", data);
       
       if (data.searchResults) {
         setResults(data.searchResults);

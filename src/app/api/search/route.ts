@@ -15,15 +15,11 @@ export async function POST(req: Request) {
       location: "United States",
     });
 
-    console.log("searchResponse\n");
-    console.log(searchResponse);
-    console.log("\nsearchResponse.organic_results\n");
     const searchResults = searchResponse.organic_results.map((result: any) => ({
       title: result.title,
       link: result.link,
       snippet: result.snippet,
     }));
-    console.log(searchResults);
 
     const aiResponse = await axios.post(
       "https://api.openai.com/v1/chat/completions",
