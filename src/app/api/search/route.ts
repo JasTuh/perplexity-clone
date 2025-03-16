@@ -8,15 +8,12 @@ export async function POST(req: Request) {
 
     const testing = true
     const apiKey = testing ? "" : process.env.SERP_API_KEY;
-    if (testing) {
-        console.log({
-            engine: "google",
-            api_key: apiKey,
-            q: query,
-            location: "United States",
-          })
-        return NextResponse.json({ error: "Something went wrong" }, { status: 201});
-    }
+    console.log({
+        engine: "google",
+        api_key: apiKey,
+        q: query,
+        location: "United States",
+    })
 
     const response = await getJson({
       engine: "google",

@@ -1,17 +1,32 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function SearchBar() {
+interface SearchBarProps {
+  onSearch: () => void;
+  resetTrigger?: number; // A value that changes when reset is needed
+}
+
+export default function SearchBar({ onSearch, resetTrigger = 0 }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Reset search when resetTrigger changes
+  useEffect(() => {
+    if (resetTrigger > 0) {
+      setQuery("");
+      setResults([]);
+      setLoading(false);
+      setHasSearched(false);
+    }
+  }, [resetTrigger]);
+
   const handleSearch = async () => {
     if (!query) return;
     setLoading(true);
     setHasSearched(true);
-
+    onSearch();
     const res = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -30,12 +45,12 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="flex flex-col w-full max-w-xl">
+    <div className="flex flex-col w-full max-w-3xl">
       <div className="relative w-full">
         <input
           type="text"
           placeholder="Ask anything..."
-          className="w-full bg-[#2b2b2b] px-4 py-3 rounded-full placeholder-gray-400 outline-none border border-transparent focus:border-[#3a3a3a] transition-colors"
+          className="w-full bg-[#2b2b2b] px-6 py-4 rounded-full placeholder-gray-400 outline-none border border-transparent focus:border-[#3a3a3a] transition-colors text-lg"
           spellCheck={false}
           data-ms-editor="true"
           value={query}
@@ -43,10 +58,26 @@ export default function SearchBar() {
           onKeyDown={handleKeyDown}
         />
         <button 
-          className="absolute right-3 top-[50%] -translate-y-1/2 px-3 py-1 bg-[#2b2b2b] rounded text-sm border border-white/10 hover:bg-[#3a3a3a]"
           onClick={handleSearch}
+          disabled={!query.trim()}
+          className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${
+            query.trim() ? 'text-blue-400 hover:bg-[#3a3a3a]' : 'text-gray-500 cursor-not-allowed'
+          }`}
+          aria-label="Search"
         >
-          Auto
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="22" 
+            height="22" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
 
