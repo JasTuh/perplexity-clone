@@ -1,17 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
 import TopicSuggestions from "@/components/TopicSuggestions";
-import SearchResults from "@/components/SearchResults";
 
 export default function Home() {
   const [hasSearched, setHasSearched] = useState(false);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [aiSummary, setAiSummary] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [__, setSearchResults] = useState<any[]>([]);
+  const [_, setAiSummary] = useState("");
 
   // Function to reset the search state
   const resetSearch = () => {
